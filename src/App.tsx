@@ -7,17 +7,14 @@ import { TodoList } from './components/TodoList';
 import { TodoFilter } from './components/TodoFilter';
 import { TodoModal } from './components/TodoModal';
 import { Loader } from './components/Loader';
-import { getTodos, getUser } from './api';
+import { getTodos } from './api';
 import { Todo } from './types/Todo';
-import { User } from './types/User';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [filteredTodos, setFilteredTodos] = useState<Todo[]>([]);
   const [isLoadingTodos, setIsLoadingTodos] = useState(false);
-  const [isLoadingUser, setIsLoadingUser] = useState(false);
-  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null);
-  const [userDetails, setUserDetails] = useState<User | null>(null);
+  const [selectedTodoId, setSelectedTodoId] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [query, setQuery] = useState('');
 
@@ -49,59 +46,48 @@ export const App: React.FC = () => {
     setFilteredTodos(filtered);
   }, [todos, filterStatus, query]);
 
-  const handleSelectTodo = (todo: Todo) => {
-    if (selectedTodo?.id === todo.id) {
-      setSelectedTodo(null);
-    } else {
-      setSelectedTodo(todo);
-    }
-
-    setIsLoadingUser(true);
-    getUser(todo.userId)
-      .then(user => setUserDetails(user))
-      .finally(() => setIsLoadingUser(false));
+  const handleSelectTodo = (todoId: number | null) => {
+    setSelectedTodoId(todoId);
   };
 
   const closeModal = () => {
-    setSelectedTodo(null);
+    setSelectedTodoId(null);
   };
 
+  const selectedTodo = todos.find(todo => todo.id === selectedTodoId);
+
   return (
-    <>
-      <div className="section">
-        <div className="container">
-          <div className="box">
-            <h1 className="title">Todos:</h1>
+    <div className="section">
+      <div className="container">
+        <div className="box">
+          <h1 className="title">Todos:</h1>
 
-            <div className="block">
-              <TodoFilter
-                filterStatus={filterStatus}
-                setFilterStatus={setFilterStatus}
-                query={query}
-                setQuery={setQuery}
-              />
-            </div>
+          <div className="block">
+            <TodoFilter
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              query={query}
+              setQuery={setQuery}
+            />
+          </div>
 
-            <div className="block">
-              {isLoadingTodos && <Loader />}{' '}
+          <div className="block">
+            {isLoadingTodos ? (
+              <Loader />
+            ) : (
               <TodoList
                 todos={filteredTodos}
-                onSelectTodo={handleSelectTodo}
-                selectedTodoId={selectedTodo?.id || null}
+                selectedTodo={selectedTodoId}
+                setSelectedTodo={handleSelectTodo}
               />
-            </div>
+            )}
           </div>
         </div>
       </div>
 
       {selectedTodo && (
-        <TodoModal
-          todo={selectedTodo}
-          user={userDetails}
-          isLoadingUser={isLoadingUser}
-          closeModal={closeModal}
-        />
+        <TodoModal todo={selectedTodo} closeModal={closeModal} />
       )}
-    </>
+    </div>
   );
 };
